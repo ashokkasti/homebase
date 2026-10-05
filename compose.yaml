@@ -1,0 +1,13 @@
+services:
+  homebase:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      HOMEBASE_DATA_DIR: /app/data
+    volumes:
+      - homebase-data:/app/data
+    restart: unless-stopped
+volumes:
+  homebase-data:

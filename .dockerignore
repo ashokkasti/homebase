@@ -1,0 +1,7 @@
+node_modules
+.next
+.env*
+.homebase
+.git
+tests
+*.tsbuildinfo
