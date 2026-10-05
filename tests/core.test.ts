@@ -284,3 +284,37 @@ test("CSRF check accepts the browser host when Next.js uses a bind address", () 
     ),
   );
 });
+test("CSRF check follows a TLS-terminating proxy and listed public URLs", () => {
+  const proxied = (origin: string) =>
+    new Request("http://10.0.1.5:3000/api/action", {
+      headers: {
+        host: "home.example.com",
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "home.example.com",
+        origin,
+      },
+    });
+  assert.doesNotThrow(() => verifyOrigin(proxied("https://home.example.com")));
+  assert.throws(() => verifyOrigin(proxied("https://evil.test")));
+  assert.throws(() => verifyOrigin(proxied("http://evil.test")));
+  process.env.HOMEBASE_URL =
+    "https://home.example.com, https://alt.example.net";
+  try {
+    assert.doesNotThrow(() =>
+      verifyOrigin(
+        new Request("http://10.0.1.5:3000/api/action", {
+          headers: { host: "10.0.1.5:3000", origin: "https://alt.example.net" },
+        }),
+      ),
+    );
+    assert.throws(() =>
+      verifyOrigin(
+        new Request("http://10.0.1.5:3000/api/action", {
+          headers: { host: "10.0.1.5:3000", origin: "https://evil.test" },
+        }),
+      ),
+    );
+  } finally {
+    delete process.env.HOMEBASE_URL;
+  }
+});

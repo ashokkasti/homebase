@@ -97,17 +97,32 @@ export async function setSession() {
 export async function clearSession() {
   (await cookies()).delete(cookieName);
 }
+// Same-origin check for mutations. Behind a TLS-terminating proxy (Traefik on
+// Coolify, Caddy, nginx) the app sees plain http, so the proxy's forwarded
+// scheme and host describe what the browser actually used. Browsers cannot set
+// these headers cross-site without a CORS preflight, which this API never grants.
 export function verifyOrigin(request: Request) {
   const origin = request.headers.get("origin");
+  if (!origin) throw new Error("Invalid request origin.");
   const requestUrl = new URL(request.url);
-  const host = request.headers.get("host");
-  const expected = process.env.HOMEBASE_URL
-    ? new URL(process.env.HOMEBASE_URL).origin
-    : host
-      ? `${requestUrl.protocol}//${host}`
-      : requestUrl.origin;
-  if (!origin || origin !== expected)
-    throw new Error("Invalid request origin.");
+  const first = (value: string | null) => value?.split(",")[0]?.trim() || "";
+  const host =
+    first(request.headers.get("x-forwarded-host")) ||
+    request.headers.get("host") ||
+    requestUrl.host;
+  const scheme =
+    first(request.headers.get("x-forwarded-proto")) ||
+    requestUrl.protocol.replace(":", "");
+  const allowed = new Set([`${scheme}://${host}`, requestUrl.origin]);
+  // HOMEBASE_URL may list several public addresses, separated by commas.
+  for (const value of (process.env.HOMEBASE_URL ?? "").split(",")) {
+    try {
+      if (value.trim()) allowed.add(new URL(value.trim()).origin);
+    } catch {
+      // Ignore malformed entries rather than locking everyone out.
+    }
+  }
+  if (!allowed.has(origin)) throw new Error("Invalid request origin.");
 }
 
 const limits = new Map<string, { count: number; reset: number }>();

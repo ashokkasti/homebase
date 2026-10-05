@@ -19,7 +19,7 @@ Deploy, read logs, edit environment variables and domains, and create new apps, 
 Homebase runs happily on the same server it manages.
 
 1. In Coolify, open a project and choose **+ New → Public Repository**.
-2. Repository URL: `https://github.com/YOUR_USERNAME/homebase`, branch `main`.
+2. Repository URL: `https://github.com/ashokkasti/homebase`, branch `main`.
 3. Build pack: **Dockerfile**. Ports exposes: `3000`. Click **Continue**.
 4. **Domains**: set the domain you want, e.g. `https://home.example.com`.
 5. **Storages → + Add**: a volume mounted at `/app/data` (keeps your saved connection).
@@ -27,7 +27,6 @@ Homebase runs happily on the same server it manages.
 
    ```env
    HOMEBASE_DEMO=false
-   HOMEBASE_URL=https://home.example.com
    HOMEBASE_ADMIN_EMAIL=you@example.com
    HOMEBASE_PASSWORD_HASH=
    HOMEBASE_SESSION_SECRET=
@@ -63,6 +62,8 @@ npm run dev
 
 You can also skip the setup screen by setting `HOMEBASE_COOLIFY_URL` and `HOMEBASE_COOLIFY_TOKEN`.
 
+If your proxy doesn't send `X-Forwarded-Proto`/`X-Forwarded-Host` and actions fail with _Invalid request origin_, set `HOMEBASE_URL` to your public address (comma-separate several).
+
 ## Security
 
 Homebase talks to Coolify server-side, so your API token never reaches the browser. Saved credentials are encrypted (AES-256-GCM), sessions are signed HTTP-only cookies, and destructive actions require typing the resource name. Environment variable values are shown to the signed-in administrator, masked until revealed. Homebase is built for a single administrator.
@@ -76,7 +77,18 @@ npm test
 npm run build
 ```
 
-Built with Next.js, React, TypeScript, TanStack Query and Zod. Pull requests are welcome; please make new features work in the demo workspace too.
+Built with Next.js, React, TypeScript, TanStack Query and Zod.
+
+## Contributing
+
+Homebase is open to change. Missing a feature, found a bug, or think something could look or feel better? Please open a pull request with your change — small fixes and big ideas are both welcome.
+
+1. Fork the repo and create a branch.
+2. Make your change; if it's a new feature, make it work in the demo workspace too.
+3. Run `npm run typecheck && npm test`.
+4. Open a pull request describing what changed and why.
+
+Not sure where to start? Open an issue first and we can figure it out together.
 
 ## Credits
 
