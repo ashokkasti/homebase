@@ -6,6 +6,8 @@ Deploy, read logs, edit environment variables and domains, and create new apps, 
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-6d5bff.svg)](LICENSE)
 
+![Homebase dashboard](docs/screenshot.jpg)
+
 ## Highlights
 
 - **Live deployments and logs** with build phases, search, filters and download
