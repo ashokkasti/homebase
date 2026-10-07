@@ -19,6 +19,8 @@ import {
   taskInputSchema,
 } from "../schemas";
 import { resourceAction } from "../coolify/resources";
+import { getContainers } from "../coolify/containers";
+import { getDashboard } from "../coolify/dashboard";
 import { editableKeys } from "../config-fields";
 
 function target(path: string[]) {
@@ -68,6 +70,15 @@ export async function manageGet(path: string[]): Promise<unknown | undefined> {
         if (kind !== "app")
           throw new Error("Rollback is available for applications.");
         return d ? demo.demoRollbackImages(id) : live.getRollbackImages(id);
+      case "containers": {
+        if (d)
+          return { containers: demo.demoContainers(kind, id), warnings: [] };
+        const resource = (await getDashboard()).resources.find(
+          (r) => r.id === id && r.kind === kind,
+        );
+        if (!resource) throw new Error("Resource not found.");
+        return getContainers(resource);
+      }
     }
   }
   return undefined;

@@ -1,12 +1,66 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  browserSupportsWebAuthn,
+  browserSupportsWebAuthnAutofill,
+  startAuthentication,
+  WebAuthnAbortService,
+  type PublicKeyCredentialRequestOptionsJSON,
+} from "@simplewebauthn/browser";
 import { api } from "@/lib/api";
+import { passkeyError } from "./passkeys";
 import { z } from "zod";
 import { Button } from "./ui/button";
 import { Icon } from "./ui/icon";
-export function Login({ email = "" }: { email?: string }) {
+const okResult = z.object({ ok: z.boolean() });
+const requestOptions = z.custom<PublicKeyCredentialRequestOptionsJSON>(
+  (v) => typeof v === "object" && v !== null && "challenge" in v,
+);
+async function passkeySignIn(autofill: boolean) {
+  const optionsJSON = await api("auth/passkey/options", requestOptions, {});
+  const response = await startAuthentication({
+    optionsJSON,
+    useBrowserAutofill: autofill,
+  });
+  await api("auth/passkey/login", okResult, { response });
+  window.location.assign("/");
+}
+
+export function Login({
+  email = "",
+  passkeys = false,
+}: {
+  email?: string;
+  passkeys?: boolean;
+}) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    if (!passkeys || !browserSupportsWebAuthn()) return;
+    setSupported(true);
+    // Offer the passkey in the email field's autofill as well.
+    let active = true;
+    void browserSupportsWebAuthnAutofill().then((autofill) => {
+      if (autofill && active) passkeySignIn(true).catch(() => undefined);
+    });
+    return () => {
+      active = false;
+      WebAuthnAbortService.cancelCeremony();
+    };
+  }, [passkeys]);
+  async function biometric() {
+    setPending(true);
+    setError("");
+    try {
+      await passkeySignIn(false);
+    } catch (err) {
+      const message = passkeyError(err, "Passkey sign-in failed.");
+      if (message !== "Cancelled.") setError(message);
+    } finally {
+      setPending(false);
+    }
+  }
   return (
     <main className="auth">
       <div className="auth-glow" aria-hidden />
@@ -24,7 +78,7 @@ export function Login({ email = "" }: { email?: string }) {
             setError("");
             const data = new FormData(event.currentTarget);
             try {
-              await api("auth/login", z.object({ ok: z.boolean() }), {
+              await api("auth/login", okResult, {
                 email: data.get("email"),
                 password: data.get("password"),
               });
@@ -44,7 +98,7 @@ export function Login({ email = "" }: { email?: string }) {
                 type="email"
                 name="email"
                 required
-                autoComplete="username"
+                autoComplete={passkeys ? "username webauthn" : "username"}
                 defaultValue={email}
                 placeholder="you@example.com"
               />
@@ -73,6 +127,22 @@ export function Login({ email = "" }: { email?: string }) {
             {pending ? "Signing in…" : "Sign in"}
             <Icon name="arrowRight" size={16} />
           </Button>
+          {supported && (
+            <>
+              <span className="auth-or" aria-hidden>
+                or
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() => void biometric()}
+              >
+                <Icon name="faceId" size={17} />
+                Sign in with Face ID or fingerprint
+              </Button>
+            </>
+          )}
         </form>
         <p className="auth-foot">
           <Icon name="shield" size={14} />

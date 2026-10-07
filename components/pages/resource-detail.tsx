@@ -30,12 +30,14 @@ import { TasksTab } from "../resource/tasks-tab";
 import { DeploymentsTab } from "../resource/deployments-tab";
 import { DomainsTab } from "../resource/domains-tab";
 import { ResourceCrumbs } from "../resource/crumbs";
+import { ContainersTab, useContainers } from "../resource/containers-tab";
 
 type Tab = { id: string; label: string; icon: IconName };
 function tabsFor(kind: Resource["kind"]): Tab[] {
   return [
     { id: "", label: "Overview", icon: "overview" },
     { id: "logs", label: "Logs", icon: "logs" },
+    { id: "containers", label: "Containers", icon: "container" },
     ...(kind === "app"
       ? [{ id: "deployments", label: "Deployments", icon: "deploy" as const }]
       : []),
@@ -208,6 +210,7 @@ export function ResourceDetail({
       <div className="tab-body" key={active.id}>
         {active.id === "" && <OverviewTab resource={resource} />}
         {active.id === "logs" && <LogsTab resource={resource} />}
+        {active.id === "containers" && <ContainersTab resource={resource} />}
         {active.id === "deployments" && <DeploymentsTab resource={resource} />}
         {active.id === "domains" && <DomainsTab resource={resource} />}
         {active.id === "environment" && <EnvironmentTab resource={resource} />}
@@ -327,6 +330,7 @@ function OverviewTab({ resource }: { resource: Resource }) {
             </Link>
           ))}
         </div>
+        <ContainerSummary resource={resource} />
         {resource.components.length > 0 && (
           <section className="panel">
             <SectionHeading
@@ -428,6 +432,58 @@ function OverviewTab({ resource }: { resource: Resource }) {
         </Button>
       </aside>
     </div>
+  );
+}
+
+function ContainerSummary({ resource }: { resource: Resource }) {
+  const query = useContainers(resource);
+  const containers = query.data?.containers ?? [];
+  if (query.isLoading || query.isError || containers.length === 0) return null;
+  return (
+    <section className="panel">
+      <SectionHeading
+        title="Containers"
+        count={containers.length}
+        action={
+          <Link
+            className="text-link"
+            href={resourcePath(resource, "containers")}
+          >
+            Manage
+            <Icon name="arrowRight" size={14} />
+          </Link>
+        }
+      />
+      <div className="rows rows-compact">
+        {containers.slice(0, 6).map((c) => (
+          <div className="row" key={`${c.serverId}/${c.id}`}>
+            <span className="row-main">
+              <Tile
+                icon="container"
+                hue={c.running ? "green" : "neutral"}
+                size="sm"
+              />
+              <span className="row-text">
+                <span className="row-title mono">{c.name}</span>
+                <span className="row-sub">
+                  {c.component ? `${c.component} · ` : ""}
+                  {c.status || c.state}
+                </span>
+              </span>
+            </span>
+            {c.running && (
+              <Link
+                className="button button-ghost button-sm"
+                href={`${resourcePath(resource, "containers")}?terminal=${encodeURIComponent(c.name)}`}
+              >
+                <Icon name="terminal" size={15} />
+                Terminal
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

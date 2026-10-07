@@ -5,7 +5,9 @@ import { configFields } from "./config-fields";
 import { classify, domainUrl, parseDomains } from "./coolify/domains";
 import { demoData } from "./demo";
 import { serviceTemplates } from "./service-templates";
+import { slugify, resolveSuggestions } from "./coolify/domain-suggestions";
 import type {
+  Container,
   DnsResult,
   DomainSettings,
   domainInputSchema,
@@ -773,4 +775,71 @@ export function demoDns(host: string): DnsResult {
     return classify(host, [ips[0] ?? "192.168.1.100"], [], ips);
   if (host.includes("staging")) return classify(host, ["203.0.113.9"], [], ips);
   return classify(host, [], [], ips);
+}
+
+export function demoContainers(kind: Kind, id: string): Container[] {
+  const resource = find(kind, id);
+  const server = demoData.servers[0];
+  const base = {
+    serverId: server?.id ?? "home",
+    serverName: server?.name ?? "Home Server",
+  };
+  const running = resource.status !== "stopped";
+  const state = (on: boolean) => ({
+    state: on ? "running" : "exited",
+    status: on ? "Up 3 days (healthy)" : "Exited (0) 2 hours ago",
+    running: on,
+  });
+  const hex = (seed: string) =>
+    Array.from({ length: 12 }, (_, i) =>
+      ((seed.charCodeAt(i % seed.length) * (i + 7)) % 16).toString(16),
+    ).join("");
+  if (kind === "service")
+    return resource.components.map((c) => ({
+      ...base,
+      ...state(c.status !== "stopped"),
+      id: hex(c.name + id),
+      name: `${slugify(c.name)}-${id}`,
+      image:
+        c.kind === "database"
+          ? "postgres:16-alpine"
+          : `${slugify(c.name)}:latest`,
+      component: c.name,
+    }));
+  return [
+    {
+      ...base,
+      ...state(running),
+      id: hex(id),
+      name: kind === "app" ? `${id}-102233445566` : id,
+      image:
+        kind === "database"
+          ? resource.engine?.toLowerCase().includes("redis")
+            ? "redis:7.2"
+            : "postgres:17-alpine"
+          : `${id}:${resource.branch || "latest"}`,
+    },
+  ];
+}
+
+export function demoDomainSuggestions(input: {
+  name: string;
+  environment?: string;
+  project?: string;
+  resourceId?: string;
+}) {
+  const taken = new Map<string, string>();
+  for (const r of demoData.resources) {
+    if (r.id === input.resourceId) continue;
+    const urls = [r.domain, ...r.components.map((c) => c.domain ?? "")];
+    if (r.kind === "app") urls.push(...demoDomainState(r.id).urls);
+    for (const d of parseDomains(urls.filter(Boolean).join(","), []))
+      taken.set(d.host, r.name);
+  }
+  const ips = demoData.servers.map((s) => s.ip);
+  return resolveSuggestions(
+    input,
+    { wildcards: ["https://example.com"], ips, taken },
+    async (host) => demoDns(host).status,
+  );
 }

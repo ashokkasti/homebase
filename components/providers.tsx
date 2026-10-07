@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AppearanceProvider } from "./appearance";
 function ThemedToaster() {
   const { resolvedTheme } = useTheme();
@@ -15,7 +15,18 @@ function ThemedToaster() {
     />
   );
 }
+// Registers the service worker that makes Homebase installable.
+function useServiceWorker() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    if (process.env.NODE_ENV !== "production") return;
+    navigator.serviceWorker
+      .register("/sw.js", { scope: "/", updateViaCache: "none" })
+      .catch(() => undefined);
+  }, []);
+}
 export function Providers({ children }: { children: ReactNode }) {
+  useServiceWorker();
   const [client] = useState(
     () =>
       new QueryClient({

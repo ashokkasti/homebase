@@ -101,9 +101,7 @@ export async function clearSession() {
 // Coolify, Caddy, nginx) the app sees plain http, so the proxy's forwarded
 // scheme and host describe what the browser actually used. Browsers cannot set
 // these headers cross-site without a CORS preflight, which this API never grants.
-export function verifyOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  if (!origin) throw new Error("Invalid request origin.");
+export function allowedOrigins(request: Request) {
   const requestUrl = new URL(request.url);
   const first = (value: string | null) => value?.split(",")[0]?.trim() || "";
   const host =
@@ -122,7 +120,13 @@ export function verifyOrigin(request: Request) {
       // Ignore malformed entries rather than locking everyone out.
     }
   }
-  if (!allowed.has(origin)) throw new Error("Invalid request origin.");
+  return allowed;
+}
+export function verifyOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin || !allowedOrigins(request).has(origin))
+    throw new Error("Invalid request origin.");
+  return origin;
 }
 
 const limits = new Map<string, { count: number; reset: number }>();

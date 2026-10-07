@@ -27,6 +27,7 @@ import {
   type Hue,
 } from "../kit";
 import { useMeta } from "../workspace";
+import { DomainSuggestions } from "../domain-suggestions";
 
 const appSources: {
   id: string;
@@ -128,6 +129,18 @@ const engines: {
     port: 8123,
   },
 ];
+function hostsOf(domains: string) {
+  return domains.split(",").flatMap((value) => {
+    try {
+      const raw = value.trim();
+      return raw
+        ? [new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`).hostname]
+        : [];
+    } catch {
+      return [];
+    }
+  });
+}
 function pretty(slug: string) {
   return slug
     .split("-")
@@ -657,15 +670,36 @@ function CreateForm({
                     onChange={(e) => set("portsExposes", e.target.value)}
                   />
                 </label>
-                <label className="config-field wide">
-                  <span className="field-label">Domains</span>
+                <div className="config-field wide">
+                  <label className="field-label" htmlFor="new-domains">
+                    Domains
+                  </label>
                   <input
+                    id="new-domains"
                     className="mono"
                     placeholder="https://app.example.com (blank = generated)"
                     value={f.domains}
                     onChange={(e) => set("domains", e.target.value)}
                   />
-                </label>
+                  <DomainSuggestions
+                    name={f.name || source?.title || ""}
+                    environment={environment?.name}
+                    project={project?.name}
+                    value={hostsOf(f.domains)}
+                    onPick={(host) =>
+                      set(
+                        "domains",
+                        [
+                          ...f.domains
+                            .split(",")
+                            .map((d) => d.trim())
+                            .filter(Boolean),
+                          `https://${host}`,
+                        ].join(","),
+                      )
+                    }
+                  />
+                </div>
               </div>
             </Section>
           )}

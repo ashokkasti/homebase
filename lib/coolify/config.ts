@@ -2,7 +2,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { readFile, mkdir, writeFile, rename } from "node:fs/promises";
 import { join } from "node:path";
 import { connectionSchema } from "../schemas";
-function dataFolder() {
+export function dataFolder() {
   return process.env.HOMEBASE_DATA_DIR || join(process.cwd(), ".homebase");
 }
 function key() {

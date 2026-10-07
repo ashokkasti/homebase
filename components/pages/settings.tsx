@@ -6,6 +6,7 @@ import { Icon } from "../ui/icon";
 import { PageHead } from "../kit";
 import { Connection } from "../connection";
 import { AppearanceSettings } from "../appearance-settings";
+import { InstallApp, PasskeySettings } from "../passkeys";
 import { okSchema, useMeta, useWorkspace } from "../workspace";
 
 export async function signOut() {
@@ -105,6 +106,8 @@ export function SettingsPage({ onShortcuts }: { onShortcuts: () => void }) {
                 Stored on the server
               </span>
             </div>
+            <PasskeySettings />
+            <InstallApp />
             {!data.demo && (
               <div className="setting-row">
                 <span>Sign out of this device</span>

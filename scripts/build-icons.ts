@@ -93,6 +93,11 @@ const names = {
   bug: "bug-bold-duotone",
   target: "target-bold-duotone",
   shieldWarning: "shield-warning-bold-duotone",
+  container: "container-bold-duotone",
+  terminal: "programming-bold-duotone",
+  magic: "magic-stick-3-bold-duotone",
+  faceId: "face-scan-circle-bold-duotone",
+  phone: "smartphone-bold-duotone",
 } as const;
 
 const entries = Object.entries(names).map(([key, name]) => {

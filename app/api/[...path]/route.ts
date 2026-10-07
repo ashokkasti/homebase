@@ -27,7 +27,29 @@ import {
 import { demoBackups, demoData, isDemo } from "@/lib/demo";
 import { demoDeploy, demoDeploymentDetail } from "@/lib/demo-store";
 import { manageGet, managePost } from "@/lib/api/manage";
+import {
+  openTerminal,
+  terminalInput,
+  terminalStream,
+} from "@/lib/api/terminal";
+import { getDomainSuggestions } from "@/lib/coolify/domain-suggestions";
+import { demoDomainSuggestions } from "@/lib/demo-store";
+import { idSchema } from "@/lib/schemas";
+import {
+  listPasskeys,
+  loginOptions,
+  registerPasskey,
+  registrationOptions,
+  removePasskey,
+  verifyPasskeyLogin,
+} from "@/lib/auth/passkeys";
+import type {
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/server";
 export const runtime = "nodejs";
+const isObject = (value: unknown) =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ path: string[] }> };
 function json(value: unknown, status = 200) {
@@ -51,6 +73,27 @@ export async function GET(request: Request, context: Context) {
       return json({ error: "Sign in to continue." }, 401);
     const { path } = await context.params;
     const route = path.join("/");
+    if (path[0] === "terminal" && path.length === 2)
+      return terminalStream(path[1] ?? "", request);
+    if (route === "auth/passkeys")
+      return json({ passkeys: await listPasskeys() });
+    if (route === "domains/suggest") {
+      const params = new URL(request.url).searchParams;
+      const text = z.string().trim().max(100).catch("");
+      const input = {
+        name: text.parse(params.get("name") ?? ""),
+        environment: text.parse(params.get("environment") ?? ""),
+        project: text.parse(params.get("project") ?? ""),
+        resourceId: params.get("resourceId")
+          ? idSchema.parse(params.get("resourceId"))
+          : undefined,
+      };
+      return json(
+        isDemo()
+          ? await demoDomainSuggestions(input)
+          : await getDomainSuggestions(input),
+      );
+    }
     const managed = await manageGet(path);
     if (managed !== undefined) return json(managed);
     if (
@@ -188,9 +231,56 @@ export async function POST(request: Request, context: Context) {
       await setSession();
       return json({ ok: true });
     }
+    if (route === "auth/passkey/options" || route === "auth/passkey/login") {
+      rateLimit("login-global", 10);
+      const configurationError = loginConfigurationError();
+      if (configurationError && !isDemo())
+        return json({ error: configurationError }, 503);
+      if (route === "auth/passkey/options")
+        return json(await loginOptions(request));
+      const body = z
+        .object({ response: z.custom<AuthenticationResponseJSON>(isObject) })
+        .parse(await request.json());
+      try {
+        await verifyPasskeyLogin(request, body.response);
+      } catch {
+        return json(
+          { error: "Passkey sign-in failed. Use your password." },
+          401,
+        );
+      }
+      await setSession();
+      return json({ ok: true });
+    }
     if (!(await authorized()))
       return json({ error: "Sign in to continue." }, 401);
+    if (route === "auth/passkeys/options")
+      return json(await registrationOptions(request));
+    if (route === "auth/passkeys/register") {
+      const body = z
+        .object({
+          response: z.custom<RegistrationResponseJSON>(isObject),
+          name: z.string().trim().max(60).default(""),
+        })
+        .parse(await request.json());
+      await registerPasskey(request, body);
+      return json({ ok: true });
+    }
+    if (route === "auth/passkeys/delete") {
+      const body = z
+        .object({ id: z.string().min(1).max(1024) })
+        .parse(await request.json());
+      await removePasskey(body.id);
+      return json({ ok: true });
+    }
+    // Keystrokes are frequent; they bypass the admin action limit.
+    if (path[0] === "terminal" && path.length === 2)
+      return json(terminalInput(path[1] ?? "", await request.json()));
     rateLimit("admin-actions");
+    if (route === "terminal") {
+      rateLimit("terminal-open", 10);
+      return json(await openTerminal(await request.json()));
+    }
     const managed = await managePost(path, () => request.json());
     if (managed !== undefined) return json(managed);
     if (route === "auth/logout") {

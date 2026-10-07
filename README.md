@@ -12,7 +12,11 @@ Deploy, read logs, edit environment variables and domains, and create new apps, 
 
 - **Live deployments and logs** with build phases, search, filters and download
 - **Create anything**: Git repos, Docker images, Dockerfiles, 8 databases, 350+ one-click services
+- **Containers and terminal**: see every container behind an app, database or service, and open a shell in any running one
+- **Domain suggestions**: free hostnames on your wildcard domain, domains you already own and sslip.io, with DNS status and clash warnings
 - **Edit** environment variables (table or `.env`), configuration, domains and redirects, storage and scheduled tasks
+- **Installable app** (PWA) for your phone's home screen or your desktop dock
+- **Biometric sign-in** with passkeys: Face ID, Touch ID, fingerprint or a security key
 - **Keyboard first**: command palette (`⌘K`) and shortcuts for everything (press `?`)
 - **Make it yours**: themes, accent colors, fonts, density, terminal themes and one-click looks
 
@@ -64,11 +68,15 @@ npm run dev
 
 You can also skip the setup screen by setting `HOMEBASE_COOLIFY_URL` and `HOMEBASE_COOLIFY_TOKEN`.
 
+**Phone app and biometric sign-in:** open Homebase over HTTPS on your phone and add it to the home screen (Safari: Share → Add to Home Screen; Chrome: Install app). Sign in with your password once, then go to **Settings → Security → Add passkey**. Next time, tap **Sign in with Face ID or fingerprint**. Add a passkey on each device; passkeys are tied to the domain you registered them on, so use the same address every time. They are stored in the data volume (`passkeys.json`, signed with `HOMEBASE_SESSION_SECRET`; rotating that secret means adding passkeys again).
+
+**Containers and terminal** reach your servers over SSH with the private keys Coolify already stores (read through the API, so the token needs `read:sensitive`), then run `docker ps` and `docker exec` there. Non-root server users need passwordless `sudo` for Docker, as Coolify itself does. For Coolify's own `localhost` server Homebase tries `host.docker.internal`, `10.0.0.1` and `172.17.0.1`; set `HOMEBASE_SSH_LOCAL_HOST` if your host is reachable elsewhere.
+
 If your proxy doesn't send `X-Forwarded-Proto`/`X-Forwarded-Host` and actions fail with _Invalid request origin_, set `HOMEBASE_URL` to your public address (comma-separate several).
 
 ## Security
 
-Homebase talks to Coolify server-side, so your API token never reaches the browser. Saved credentials are encrypted (AES-256-GCM), sessions are signed HTTP-only cookies, and destructive actions require typing the resource name. Environment variable values are shown to the signed-in administrator, masked until revealed. Homebase is built for a single administrator.
+Homebase talks to Coolify server-side, so your API token never reaches the browser. Saved credentials are encrypted (AES-256-GCM), sessions are signed HTTP-only cookies, and destructive actions require typing the resource name. Environment variable values are shown to the signed-in administrator, masked until revealed. The container terminal is a full shell inside the container, available only to the signed-in administrator; it only opens containers that belong to the chosen resource. Homebase is built for a single administrator.
 
 ## Development
 

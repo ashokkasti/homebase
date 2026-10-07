@@ -28,6 +28,7 @@ import {
 import { useConfirm } from "../confirm";
 import { okSchema, useWorkspace } from "../workspace";
 import { ApplyBanner } from "./apply-banner";
+import { DomainSuggestions } from "../domain-suggestions";
 
 type Draft = Pick<Domain, "host" | "scheme" | "port" | "path" | "indexed">;
 type Settings = Pick<DomainSettings, "forceHttps" | "redirect"> & {
@@ -338,6 +339,8 @@ export function DomainsTab({ resource }: { resource: Resource }) {
         {editing === "new" && (
           <DomainForm
             initial={blank}
+            resource={resource}
+            existing={hosts}
             defaultPort={settings.defaultPort}
             pending={mutation.isPending}
             onCancel={() => setEditing(null)}
@@ -380,6 +383,8 @@ export function DomainsTab({ resource }: { resource: Resource }) {
               <DomainForm
                 key={k}
                 initial={d}
+                resource={resource}
+                existing={hosts}
                 defaultPort={settings.defaultPort}
                 pending={mutation.isPending}
                 onCancel={() => setEditing(null)}
@@ -545,12 +550,16 @@ export function DomainsTab({ resource }: { resource: Resource }) {
 
 function DomainForm({
   initial,
+  resource,
+  existing,
   defaultPort,
   pending,
   onCancel,
   onSubmit,
 }: {
   initial: Draft;
+  resource: Resource;
+  existing: string[];
   defaultPort: string;
   pending: boolean;
   onCancel: () => void;
@@ -637,6 +646,17 @@ function DomainForm({
         <Button type="submit" size="sm" disabled={!valid || pending}>
           {pending ? "Saving…" : "Save"}
         </Button>
+      </div>
+      <div className="domain-form-suggestions">
+        <DomainSuggestions
+          name={resource.name}
+          resourceId={resource.id}
+          environment={resource.environment}
+          project={resource.projectName}
+          value={draft.host}
+          exclude={existing}
+          onPick={(host) => setDraft({ ...draft, host })}
+        />
       </div>
     </form>
   );

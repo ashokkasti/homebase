@@ -486,3 +486,55 @@ export const dnsResultSchema = z.object({
   serverIps: z.array(z.string()),
 });
 export type DnsResult = z.infer<typeof dnsResultSchema>;
+
+// ───────────── Containers & terminal ─────────────
+export const containerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  image: z.string(),
+  state: z.string(),
+  status: z.string(),
+  running: z.boolean(),
+  serverId: z.string(),
+  serverName: z.string(),
+  // Service component the container belongs to, when the resource is a service.
+  component: z.string().optional(),
+});
+export type Container = z.infer<typeof containerSchema>;
+export const containerListSchema = z.object({
+  containers: z.array(containerSchema),
+  warnings: z.array(z.string()),
+});
+export const containerNameSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9][A-Za-z0-9_.-]{0,254}$/, "Invalid container name.");
+export const terminalOpenSchema = z.object({
+  kind: kindSchema,
+  resourceId: idSchema,
+  container: containerNameSchema,
+  cols: z.number().int().min(10).max(500).default(100),
+  rows: z.number().int().min(5).max(200).default(30),
+});
+export const terminalInputSchema = z.discriminatedUnion("op", [
+  z.object({ op: z.literal("input"), data: z.string().max(65536) }),
+  z.object({
+    op: z.literal("resize"),
+    cols: z.number().int().min(10).max(500),
+    rows: z.number().int().min(5).max(200),
+  }),
+  z.object({ op: z.literal("close") }),
+]);
+
+// ───────────── Domain suggestions ─────────────
+export const domainSuggestionSchema = z.object({
+  host: z.string(),
+  source: z.enum(["wildcard", "existing", "sslip"]),
+  dns: z.enum(["ok", "proxied", "mismatch", "missing", "error"]),
+});
+export type DomainSuggestion = z.infer<typeof domainSuggestionSchema>;
+export const domainSuggestionsSchema = z.object({
+  suggestions: z.array(domainSuggestionSchema),
+  // Hosts already used by other resources, mapped to the resource name.
+  taken: z.record(z.string(), z.string()),
+});
+export type DomainSuggestions = z.infer<typeof domainSuggestionsSchema>;

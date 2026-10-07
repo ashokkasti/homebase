@@ -65,6 +65,13 @@ const fontVariables = [
 export const metadata: Metadata = {
   title: "Homebase · Your server, at a glance",
   description: "A simpler home for everything running on your server.",
+  applicationName: "Homebase",
+  appleWebApp: {
+    capable: true,
+    title: "Homebase",
+    statusBarStyle: "default",
+  },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 export const viewport: Viewport = {
   themeColor: [

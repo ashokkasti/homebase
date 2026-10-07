@@ -4195,6 +4195,146 @@ a.server-head:hover .row-title {
   display: flex;
   gap: 6px;
 }
+.domain-form-suggestions {
+  grid-column: 1 / -1;
+}
+.domain-form-suggestions:empty {
+  display: none;
+}
+
+/* domain suggestions */
+.domain-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.domain-suggestions:empty {
+  display: none;
+}
+.domain-form .domain-suggestions {
+  margin-top: 0;
+}
+.suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.suggestion-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.suggestion-chip {
+  --st: var(--gray);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px 0 8px;
+  border: 0;
+  border-radius: calc(999px * var(--rs));
+  font-size: 11.5px;
+  color: var(--text-2);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    box-shadow 0.12s;
+}
+.suggestion-chip:hover,
+.suggestion-chip:focus-visible {
+  color: var(--text);
+  background: color-mix(in oklch, var(--accent) 8%, var(--panel));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklch, var(--accent) 40%, transparent);
+}
+.suggestion-chip.dns-ok {
+  --st: var(--green);
+}
+.suggestion-chip.dns-proxied {
+  --st: var(--blue);
+}
+.suggestion-chip.dns-mismatch {
+  --st: var(--amber);
+}
+.suggestion-chip.dns-error {
+  --st: var(--red);
+}
+.domain-conflict {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  color: color-mix(in oklch, var(--amber) 70%, var(--text));
+}
+
+/* containers and terminal */
+.container-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.container-row.active {
+  background: color-mix(in oklch, var(--accent) 6%, transparent);
+}
+.container-row .row-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.inline-copy {
+  width: 22px;
+  height: 22px;
+  opacity: 0;
+}
+.container-row:hover .inline-copy,
+.inline-copy:focus-visible {
+  opacity: 1;
+}
+.terminal-console {
+  height: min(560px, calc(100dvh - 260px));
+  min-height: 320px;
+}
+.terminal-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: var(--term-err);
+  background: var(--term-err-bg);
+}
+.terminal-host {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 4px 4px 12px;
+  background: var(--term-bg);
+}
+.terminal-host .xterm {
+  height: 100%;
+}
+.terminal-host .xterm-viewport {
+  scrollbar-color: var(--term-scroll) transparent;
+}
 @media (max-width: 1080px) {
   .domain-table .domain-row {
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -5557,4 +5697,30 @@ html:not([data-scale="100"]) .auth {
   .look-input {
     width: 100%;
   }
+}
+
+/* passkeys */
+.setting-row .row-text {
+  padding: 10px 0;
+}
+.passkey-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-weight: 500;
+}
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.auth-or::before,
+.auth-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
