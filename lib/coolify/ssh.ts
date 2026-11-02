@@ -93,11 +93,12 @@ function open(host: string, t: Target, key: string) {
 type Pooled = {
   client: Client;
   docker: string;
+  privileged: string;
   timer?: NodeJS.Timeout;
   users: number;
 };
 // Builds the remote command from the server's docker invocation.
-type Command = (docker: string) => string;
+type Command = (docker: string, privileged: string) => string;
 const store = globalThis as typeof globalThis & {
   homebaseSsh?: Map<string, Promise<Pooled>>;
 };
@@ -113,6 +114,7 @@ async function dial(serverId: string): Promise<Pooled> {
         const pooled: Pooled = {
           client,
           docker: t.user === "root" ? "docker" : "sudo -n docker",
+          privileged: t.user === "root" ? "" : "sudo -n ",
           users: 0,
         };
         const drop = () => pool.delete(serverId);
@@ -144,6 +146,7 @@ async function acquire(serverId: string) {
   return {
     client: pooled.client,
     docker: pooled.docker,
+    privileged: pooled.privileged,
     release() {
       pooled.users--;
       if (pooled.users > 0) return;
@@ -155,12 +158,16 @@ async function acquire(serverId: string) {
   };
 }
 
-export async function sshExec(serverId: string, command: Command) {
-  const { client, docker, release } = await acquire(serverId);
+export async function sshExec(
+  serverId: string,
+  command: Command,
+  options: { input?: string; timeoutMs?: number } = {},
+) {
+  const { client, docker, privileged, release } = await acquire(serverId);
   try {
     return await new Promise<string>((resolve, reject) => {
       client.exec(
-        command(docker),
+        command(docker, privileged),
         (error: Error | undefined, stream: ClientChannel) => {
           if (error) return reject(error);
           let out = "";
@@ -168,17 +175,27 @@ export async function sshExec(serverId: string, command: Command) {
           const timer = setTimeout(() => {
             stream.close();
             reject(new Error("The server took too long to answer."));
-          }, 15000);
+          }, options.timeoutMs ?? 15000);
+          let bytes = 0;
           stream
-            .on("data", (chunk: Buffer) => (out += chunk.toString()))
+            .on("data", (chunk: Buffer) => {
+              bytes += chunk.length;
+              if (bytes > 4 * 1024 * 1024) {
+                stream.close();
+                reject(new Error("Server response exceeded the output limit."));
+                return;
+              }
+              out += chunk.toString();
+            })
             .on("close", (code: number | null) => {
               clearTimeout(timer);
-              if (code && code !== 0)
+              if (code !== 0)
                 reject(
                   new Error(err.trim().slice(0, 300) || `Exit code ${code}`),
                 );
               else resolve(out);
             });
+          if (options.input !== undefined) stream.end(options.input);
           stream.stderr.on(
             "data",
             (chunk: Buffer) => (err += chunk.toString()),
@@ -196,10 +213,10 @@ export async function sshShell(
   command: Command,
   size: { cols: number; rows: number },
 ): Promise<ClientChannel> {
-  const { client, docker, release } = await acquire(serverId);
+  const { client, docker, privileged, release } = await acquire(serverId);
   return new Promise((resolve, reject) => {
     client.exec(
-      command(docker),
+      command(docker, privileged),
       { pty: { term: "xterm-256color", cols: size.cols, rows: size.rows } },
       (error: Error | undefined, stream: ClientChannel) => {
         if (error) {

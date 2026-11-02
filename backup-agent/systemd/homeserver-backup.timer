@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Supabase backup nightly at 02:00 Nepal time
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 Asia/Kathmandu
+Persistent=false
+AccuracySec=1min
+Unit=homeserver-backup.service
+
+[Install]
+WantedBy=timers.target

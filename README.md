@@ -10,6 +10,7 @@ Deploy, read logs, edit environment variables and domains, and create new apps, 
 
 ## Highlights
 
+- **Coordinated server backups**: database + Storage snapshots, backup health, restore verification, and configurable nightly retention. [Setup and operations](docs/server-backups.md).
 - **Live deployments and logs** with build phases, search, filters and download
 - **Create anything**: Git repos, Docker images, Dockerfiles, 8 databases, 350+ one-click services
 - **Containers and terminal**: see every container behind an app, database or service, and open a shell in any running one
@@ -73,6 +74,12 @@ You can also skip the setup screen by setting `HOMEBASE_COOLIFY_URL` and `HOMEBA
 **Containers and terminal** reach your servers over SSH with the private keys Coolify already stores (read through the API, so the token needs `read:sensitive`), then run `docker ps` and `docker exec` there. Non-root server users need passwordless `sudo` for Docker, as Coolify itself does. For Coolify's own `localhost` server Homebase tries `host.docker.internal`, `10.0.0.1` and `172.17.0.1`; set `HOMEBASE_SSH_LOCAL_HOST` if your host is reachable elsewhere.
 
 If your proxy doesn't send `X-Forwarded-Proto`/`X-Forwarded-Host` and actions fail with _Invalid request origin_, set `HOMEBASE_URL` to your public address (comma-separate several).
+
+## Backups
+
+Open **Backups → Database + Storage** to view completed/incomplete recovery points, last successful capture, the exact restore-tested snapshot, next run, and free disk space. Run a backup or isolated restore check and configure daily time, timezone, retention, and free-space threshold from Homebase.
+
+The backup agent and systemd units are bundled in this repository and Docker image. Choose **Connect existing backups** for an installed service, or install on another server using an existing mounted ext4 disk. Installation never formats disks. Host jobs continue independently of Homebase. See [server backup setup](docs/server-backups.md).
 
 ## Security
 

@@ -1,0 +1,24 @@
+[Unit]
+ConditionPathExists=!/var/lib/homeserver-backup/destination-request.json
+Description=Nightly coordinated Supabase database and Storage backup
+Requires=docker.service
+After=docker.service homeserver-backup-recover.service
+RequiresMountsFor=@MOUNT@
+OnFailure=homeserver-backup-health.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/local/sbin/homeserver-backup backup
+ExecStopPost=/usr/local/sbin/homeserver-backup recover
+TimeoutStartSec=2h
+TimeoutStopSec=15min
+KillMode=control-group
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only

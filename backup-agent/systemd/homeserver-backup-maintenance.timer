@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily backup integrity and retention maintenance
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Asia/Kathmandu
+Persistent=true
+Unit=homeserver-backup-maintenance.service
+
+[Install]
+WantedBy=timers.target

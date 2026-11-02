@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly isolated backup restore verification
+
+[Timer]
+OnCalendar=*-*-01 05:00:00 Asia/Kathmandu
+Persistent=true
+Unit=homeserver-backup-verify.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly backup health check
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1h
+Unit=homeserver-backup-health.service
+
+[Install]
+WantedBy=timers.target

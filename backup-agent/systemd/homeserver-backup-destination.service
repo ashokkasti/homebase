@@ -1,0 +1,14 @@
+[Unit]
+Description=Verify and change the backup repository destination
+After=homeserver-backup.service homeserver-backup-maintenance.service homeserver-backup-verify.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/homeserver-backup/destination.py
+TimeoutStartSec=48h
+TimeoutStopSec=1min
+KillMode=control-group
+Nice=15
+IOSchedulingClass=idle

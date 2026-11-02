@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "icons": "tsx scripts/build-icons.ts"
+    "icons": "tsx scripts/build-icons.ts",
+    "test:backup-agent": "cd backup-agent && python3 -m unittest discover -s tests -v",
+    "smoke:backups": "tsx scripts/smoke-backups.ts"
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",

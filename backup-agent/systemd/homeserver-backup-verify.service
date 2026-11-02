@@ -1,0 +1,17 @@
+[Unit]
+ConditionPathExists=!/var/lib/homeserver-backup/destination-request.json
+Description=Restore backup files and validate an isolated PostgreSQL clone
+Requires=docker.service
+After=docker.service homeserver-backup.service homeserver-backup-maintenance.service
+RequiresMountsFor=@MOUNT@
+OnFailure=homeserver-backup-health.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/homeserver-backup/verify_restore.py
+ExecStopPost=/usr/bin/python3 /opt/homeserver-backup/verify_restore.py --recover
+TimeoutStartSec=2h
+TimeoutStopSec=5min
+UMask=0077
+Nice=15
+IOSchedulingClass=idle

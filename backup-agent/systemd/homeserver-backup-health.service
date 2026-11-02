@@ -1,0 +1,8 @@
+[Unit]
+After=homeserver-backup.service homeserver-backup-maintenance.service homeserver-backup-verify.service
+Description=Check backup freshness, disk identity, and unresolved recovery
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homeserver-backup health
+UMask=0077

@@ -24,12 +24,38 @@ import {
 } from "../kit";
 import { useConfirm } from "../confirm";
 import { okSchema, useWorkspace } from "../workspace";
+import { ServerBackupsPanel } from "./server-backups";
 
 function succeeded(status: string) {
   return ["success", "successful", "finished"].includes(status.toLowerCase());
 }
 
 export function BackupsPage() {
+  const [source, setSource] = useState<"server" | "coolify">("server");
+  return (
+    <>
+      <PageHead
+        icon="backup"
+        hue="backup"
+        title="Backups"
+        description="Recovery points, verification, and protection for your server."
+      />
+      <div className="server-backup-tabs">
+        <Segmented
+          value={source}
+          onChange={setSource}
+          options={[
+            { value: "server", label: "Database + Storage" },
+            { value: "coolify", label: "Coolify database schedules" },
+          ]}
+        />
+      </div>
+      {source === "server" ? <ServerBackupsPanel /> : <CoolifyBackupsPanel />}
+    </>
+  );
+}
+
+function CoolifyBackupsPanel() {
   const { data, openCoolify, invalidate } = useWorkspace();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -82,12 +108,14 @@ export function BackupsPage() {
     `backups/${encodeURIComponent(b.databaseId)}/${encodeURIComponent(b.id)}`;
   return (
     <>
-      <PageHead
-        icon="backup"
-        hue="backup"
-        title="Backups"
-        description="Schedules and recent database snapshots."
-      >
+      <div className="server-backup-panel-head">
+        <div>
+          <h2>Database schedules</h2>
+          <p>
+            Database-only backups managed by Coolify. Storage objects are
+            covered by server backups.
+          </p>
+        </div>
         <Button
           onClick={() => {
             setDatabaseId(databases[0]?.id ?? "");
@@ -98,7 +126,7 @@ export function BackupsPage() {
           <Icon name="plus" size={16} />
           Add schedule
         </Button>
-      </PageHead>
+      </div>
       {query.isLoading ? (
         <Loading rows={3} />
       ) : query.isError ? (

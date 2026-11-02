@@ -1,0 +1,15 @@
+[Unit]
+Description=Resume containers left stopped by an interrupted backup
+Requires=docker.service
+After=docker.service
+Before=homeserver-backup.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homeserver-backup recover
+ExecStartPost=/usr/bin/python3 /opt/homeserver-backup/verify_restore.py --recover
+TimeoutStartSec=15min
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

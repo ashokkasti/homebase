@@ -1,0 +1,14 @@
+[Unit]
+ConditionPathExists=!/var/lib/homeserver-backup/destination-request.json
+After=homeserver-backup.service
+Description=Check backup integrity and enforce 30-day retention
+RequiresMountsFor=@MOUNT@
+OnFailure=homeserver-backup-health.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homeserver-backup maintenance
+TimeoutStartSec=2h
+UMask=0077
+Nice=15
+IOSchedulingClass=idle

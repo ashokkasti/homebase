@@ -1,3 +1,14 @@
+import {
+  serverBackupOverview,
+  serverBackupEvents,
+  serverBackupAction,
+} from "@/lib/coolify/server-backups";
+import { backupMutationSchema } from "@/lib/backup-schemas";
+import {
+  demoBackupOverview,
+  demoBackupEvents,
+  demoBackupAction,
+} from "@/lib/demo-server-backups";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -92,6 +103,19 @@ export async function GET(request: Request, context: Context) {
         isDemo()
           ? await demoDomainSuggestions(input)
           : await getDomainSuggestions(input),
+      );
+    }
+    if (
+      path[0] === "server-backups" &&
+      (path.length === 2 || (path.length === 3 && path[2] === "events"))
+    ) {
+      const serverId = idSchema.parse(path[1]);
+      if (path[2] === "events")
+        return json(
+          isDemo() ? demoBackupEvents() : await serverBackupEvents(serverId),
+        );
+      return json(
+        isDemo() ? demoBackupOverview() : await serverBackupOverview(serverId),
       );
     }
     const managed = await manageGet(path);
@@ -280,6 +304,15 @@ export async function POST(request: Request, context: Context) {
     if (route === "terminal") {
       rateLimit("terminal-open", 10);
       return json(await openTerminal(await request.json()));
+    }
+    if (path[0] === "server-backups" && path.length === 2) {
+      const serverId = idSchema.parse(path[1]);
+      const body = backupMutationSchema.parse(await request.json());
+      return json(
+        isDemo()
+          ? demoBackupAction(body)
+          : await serverBackupAction(serverId, body),
+      );
     }
     const managed = await managePost(path, () => request.json());
     if (managed !== undefined) return json(managed);
